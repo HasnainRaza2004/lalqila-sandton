@@ -1,50 +1,119 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
-import { ChevronDown } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import PhoneInput from "../../../components/common/PhoneInput";
 import { Colors } from "../../../constants/theme";
 import {
-    responsiveFontSize,
-    responsiveHeight,
-    responsiveWidth,
-    spacing,
+  responsiveFontSize,
+  responsiveHeight,
+  responsiveWidth,
+  spacing,
 } from "../../../utils/responsive";
 
 export default function Reservation() {
   const router = useRouter();
-  const [buffetType, setBuffetType] = useState("");
-  const [date, setDate] = useState(new Date());
-  const [time, setTime] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
-  const [guests, setGuests] = useState("");
-  const [venue, setVenue] = useState("");
+
+  // personal & reservation fields
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [partySize, setPartySize] = useState("");
   const [specialRequest, setSpecialRequest] = useState("");
 
-  // Modal states
-  const [buffetModalVisible, setBuffetModalVisible] = useState(false);
-  const [guestsModalVisible, setGuestsModalVisible] = useState(false);
-  const [venueModalVisible, setVenueModalVisible] = useState(false);
+  // date + slots
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [slots, setSlots] = useState(() => generateSlots(new Date()));
+  const [selectedSlot, setSelectedSlot] = useState(null);
 
+  // dropdowns / modals kept for backward compatibility (buffet/venue etc)
+  const [buffetModalVisible, setBuffetModalVisible] = useState(false);
+  const [venueModalVisible, setVenueModalVisible] = useState(false);
   const buffetTypes = ["Breakfast", "Lunch", "Dinner"];
-  const guestOptions = [...Array(20)].map((_, i) => String(i + 1));
   const venueOptions = [
     { label: "Main Hall", value: "main_hall" },
     { label: "Private Room", value: "private_room" },
     { label: "Garden Area", value: "garden" },
   ];
+
+  useEffect(() => {
+    // regenerate dummy slots whenever date changes
+    setSlots(generateSlots(date));
+    setSelectedSlot(null);
+  }, [date]);
+
+  function formatDate(d) {
+    try {
+      return d.toLocaleDateString(undefined, {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+    } catch {
+      return d.toDateString();
+    }
+  }
+
+  function formatTimeLabel(d) {
+    return d.toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
+  function generateSlots(baseDate) {
+    const slotsArr = [];
+    const day = baseDate.getDay(); // 0 = Sun, 6 = Sat
+
+    const pushHourlyRange = (date, startHour, endHour) => {
+      // generate 1-hour slots starting at startHour, up to but excluding endHour
+      for (let h = startHour; h < endHour; h++) {
+        const s = new Date(date);
+        s.setHours(h, 0, 0, 0);
+        slotsArr.push({
+          id: slotsArr.length,
+          time: s,
+          label: formatTimeLabel(s),
+          seats: 220,
+          duration: "1 hour",
+        });
+      }
+    };
+
+    if (day === 0 || day === 6) {
+      // Weekend buffet timings: 12pm–5pm and 6pm–9pm
+      pushHourlyRange(baseDate, 12, 17); // 12,13,14,15,16
+      pushHourlyRange(baseDate, 18, 21); // 18,19,20
+    } else {
+      // Weekdays: keep previous behavior, 8 hourly slots from 6pm
+      const start = new Date(baseDate);
+      start.setHours(18, 0, 0, 0);
+      for (let i = 0; i < 8; i++) {
+        const s = new Date(start.getTime() + i * 60 * 60 * 1000);
+        slotsArr.push({
+          id: slotsArr.length,
+          time: s,
+          label: formatTimeLabel(s),
+          seats: 220,
+          duration: "1 hour",
+        });
+      }
+    }
+
+    return slotsArr;
+  }
 
   const renderDropdownModal = (
     visible,
@@ -100,22 +169,25 @@ export default function Reservation() {
 
   const handleConfirmBooking = () => {
     console.log("Booking confirmed:", {
-      buffetType,
+      fullName,
+      email,
+      phone,
+      partySize,
       date,
-      time,
-      guests,
-      venue,
+      selectedSlot,
       specialRequest,
     });
     router.push("/(user)/bookings/event-history");
   };
 
   const handleReset = () => {
-    setBuffetType("");
+    setFullName("");
+    setEmail("");
+    setPhone("");
+    setPartySize("");
     setDate(new Date());
-    setTime(new Date());
-    setGuests("");
-    setVenue("");
+    setSlots(generateSlots(new Date()));
+    setSelectedSlot(null);
     setSpecialRequest("");
   };
 
@@ -133,126 +205,143 @@ export default function Reservation() {
         >
           {/* Header Section */}
           <View style={styles.headerBanner}>
-            <Text style={styles.headerTitle}>Book Your Reservation</Text>
+            <Text style={styles.headerTitle}>Reservation Details</Text>
           </View>
 
-          <View style={styles.subHeader}>
-            <Text style={styles.subHeaderTitle}>
-              Reserve Your Table, Taste Luxury,{"\n"}One Bite at a Time
-            </Text>
-            <Text style={styles.subHeaderText}>
-              Experience the finest buffet dining with instant booking,{"\n"}
-              flexible timing, and curated cuisines - all in one place
-            </Text>
-          </View>
-
-          {/* Reservation Form */}
-          <View style={styles.formCard}>
-            <Text style={styles.formTitle}>Make a Reservation</Text>
-
-            {/* Row 1: Buffet Type | Date & Time */}
-            <View style={styles.formRow}>
-              <View style={[styles.inputGroup, styles.col]}>
-                <Text style={styles.label}>Select Buffet Type</Text>
-                <TouchableOpacity
-                  style={styles.dropdown}
-                  onPress={() => setBuffetModalVisible(true)}
-                >
-                  <Text style={styles.dropdownText}>
-                    {buffetType || "Select Buffet Type"}
-                  </Text>
-                  <ChevronDown size={15} color={Colors.white} strokeWidth={2} />
-                </TouchableOpacity>
+          {/* Top form row: Name / Email */}
+          <View style={[styles.formCard, { paddingBottom: spacing.md }]}>
+            <View style={styles.inputRow}>
+              <View style={[styles.inputCol]}>
+                <Text style={styles.label}>Full Name *</Text>
+                <TextInput
+                  value={fullName}
+                  onChangeText={setFullName}
+                  placeholder="John Doe"
+                  placeholderTextColor="#b89a7e"
+                  style={styles.input}
+                />
               </View>
 
-              <View style={[styles.inputGroup, styles.col]}>
-                <Text style={styles.label}>Choose Date & Time</Text>
-                <View style={styles.inlineRow}>
-                  <TouchableOpacity
-                    style={[styles.dateTimeButton, styles.flex1]}
-                    onPress={() => setShowDatePicker(true)}
-                  >
-                    <Text style={styles.dateTimeIcon}>📅</Text>
-                    <Text style={styles.dateTimeText}>Date</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.dateTimeButton, styles.flex1]}
-                    onPress={() => setShowTimePicker(true)}
-                  >
-                    <Text style={styles.dateTimeIcon}>🕐</Text>
-                    <Text style={styles.dateTimeText}>Time</Text>
-                  </TouchableOpacity>
+              <View style={[styles.inputCol]}>
+                <Text style={styles.label}>Email Address *</Text>
+                <TextInput
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="john@example.com"
+                  placeholderTextColor="#b89a7e"
+                  keyboardType="email-address"
+                  style={styles.input}
+                />
+              </View>
+            </View>
+
+            {/* Phone / Party Size */}
+            <View style={styles.phoneInputRow}>
+              <View style={[styles.inputCol]}>
+                <PhoneInput
+                  label="Phone Number *"
+                  value={phone}
+                  onChangeText={setPhone}
+                  width={responsiveWidth(0.44)}
+                />
+              </View>
+
+              <View style={[styles.inputCol]}>
+                <Text style={styles.label}>Party Size *</Text>
+                <TextInput
+                  value={partySize}
+                  onChangeText={setPartySize}
+                  placeholder="1"
+                  placeholderTextColor="#b89a7e"
+                  keyboardType="number-pad"
+                  style={styles.input}
+                />
+              </View>
+            </View>
+
+            {/* Reservation Date & buffet tag */}
+            <View style={{ marginTop: spacing.md }}>
+              <Text style={styles.label}>Reservation Date *</Text>
+              <TouchableOpacity
+                style={styles.dateRow}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Text style={styles.dateText}>📅 {formatDate(date)}</Text>
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>Buffet Day</Text>
                 </View>
-                {showDatePicker && (
-                  <DateTimePicker
-                    value={date}
-                    mode="date"
-                    display="default"
-                    onChange={(event, selectedDate) => {
-                      setShowDatePicker(false);
-                      if (selectedDate) setDate(selectedDate);
-                    }}
-                  />
-                )}
-                {showTimePicker && (
-                  <DateTimePicker
-                    value={time}
-                    mode="time"
-                    display="default"
-                    onChange={(event, selectedTime) => {
-                      setShowTimePicker(false);
-                      if (selectedTime) setTime(selectedTime);
-                    }}
-                  />
-                )}
+              </TouchableOpacity>
+              {showDatePicker && (
+                <DateTimePicker
+                  value={date}
+                  mode="date"
+                  display="default"
+                  onChange={(event, selectedDate) => {
+                    setShowDatePicker(false);
+                    if (selectedDate) setDate(selectedDate);
+                  }}
+                />
+              )}
+            </View>
+
+            {/* Time slots */}
+            <View style={{ marginTop: spacing.md }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: spacing.xs,
+                }}
+              >
+                <Text style={[styles.label, { marginBottom: 0 }]}>
+                  Select Time Slot *
+                </Text>
+                <View style={styles.smallBadge}>
+                  <Text style={styles.smallBadgeText}>1-hour buffet slots</Text>
+                </View>
+              </View>
+
+              <View style={styles.slotList}>
+                {slots.map((s) => {
+                  const selected = selectedSlot && selectedSlot.id === s.id;
+                  return (
+                    <TouchableOpacity
+                      key={s.id}
+                      style={[
+                        styles.slotItem,
+                        selected ? styles.slotItemSelected : null,
+                      ]}
+                      onPress={() => setSelectedSlot(s)}
+                    >
+                      <Text
+                        style={[
+                          styles.slotTimeText,
+                          selected ? { color: Colors.white } : null,
+                        ]}
+                      >
+                        {s.label}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.slotSeatsText,
+                          selected ? { color: Colors.white } : null,
+                        ]}
+                      >
+                        {s.seats} seats
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
 
-            {/* Row 2: Guests | Venue */}
-            <View style={styles.formRow}>
-              <View style={[styles.inputGroup, styles.col]}>
-                <Text style={styles.label}>Number of Guests</Text>
-                <TouchableOpacity
-                  style={styles.dropdown}
-                  onPress={() => setGuestsModalVisible(true)}
-                >
-                  <Text style={styles.dropdownText}>
-                    {guests || "Select Guests"}
-                  </Text>
-                  <ChevronDown
-                    size={18}
-                    color={Colors.primary}
-                    strokeWidth={2}
-                  />
-                </TouchableOpacity>
-              </View>
-
-              <View style={[styles.inputGroup, styles.col]}>
-                <Text style={styles.label}>Select Venue</Text>
-                <TouchableOpacity
-                  style={styles.dropdown}
-                  onPress={() => setVenueModalVisible(true)}
-                >
-                  <Text style={styles.dropdownText}>
-                    {venueOptions.find((v) => v.value === venue)?.label ||
-                      "Select Venue"}
-                  </Text>
-                  <ChevronDown
-                    size={18}
-                    color={Colors.primary}
-                    strokeWidth={2}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Row 3: Special Request (full width) */}
-            <View style={[styles.inputGroup]}>
-              <Text style={styles.label}>Special Request</Text>
+            {/* Special Requests */}
+            <View style={{ marginTop: spacing.md }}>
+              <Text style={styles.label}>Special Requests (Optional)</Text>
               <TextInput
                 value={specialRequest}
                 onChangeText={setSpecialRequest}
-                placeholder="Add notes or Preferences"
+                placeholder="Dietary restrictions, celebration notes, seating preferences..."
                 placeholderTextColor="#b89a7e"
                 multiline
                 numberOfLines={3}
@@ -266,7 +355,9 @@ export default function Reservation() {
                 style={styles.confirmButton}
                 onPress={handleConfirmBooking}
               >
-                <Text style={styles.confirmButtonText}>Confirm Booking</Text>
+                <Text style={styles.confirmButtonText}>
+                  Confirm Reservation
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.resetButton}
@@ -277,7 +368,7 @@ export default function Reservation() {
             </View>
           </View>
 
-          {/* Payment Section */}
+          {/* Payment Card (kept) */}
           <View style={styles.paymentCard}>
             <View style={styles.paymentHeader}>
               <Text style={styles.paymentIcon}>💳</Text>
@@ -298,31 +389,22 @@ export default function Reservation() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Modals */}
+      {/* Re-use dropdown modals if needed */}
       {renderDropdownModal(
         buffetModalVisible,
         setBuffetModalVisible,
         buffetTypes,
-        buffetType,
-        setBuffetType,
+        null,
+        () => {},
         "Select Buffet Type"
-      )}
-
-      {renderDropdownModal(
-        guestsModalVisible,
-        setGuestsModalVisible,
-        guestOptions,
-        guests,
-        setGuests,
-        "Number of Guests"
       )}
 
       {renderDropdownModal(
         venueModalVisible,
         setVenueModalVisible,
         venueOptions,
-        venue,
-        setVenue,
+        null,
+        () => {},
         "Select Venue",
         true
       )}
@@ -340,7 +422,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     marginTop: spacing.md,
     marginBottom: spacing.sm,
-    alignItems: "center",
+    alignItems: "flex-start",
   },
   headerTitle: {
     color: Colors.white,
@@ -348,28 +430,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
 
-  // Subheader
-  subHeader: {
-    backgroundColor: Colors.cream,
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: "#eadfd6",
-  },
-  subHeaderTitle: {
-    color: Colors.primary,
-    fontSize: responsiveFontSize(12),
-    fontWeight: "800",
-    marginBottom: spacing.xs,
-  },
-  subHeaderText: {
-    color: Colors.primary,
-    fontSize: responsiveFontSize(9),
-    opacity: 0.8,
-  },
-
-  // Form Card
+  // Form Card (re-used)
   formCard: {
     backgroundColor: Colors.white,
     borderRadius: 16,
@@ -383,66 +444,100 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 3,
   },
-  formTitle: {
-    color: Colors.primary,
-    fontSize: responsiveFontSize(15),
-    fontWeight: "900",
-    marginBottom: spacing.md,
-  },
 
-  // Grid
-  formRow: {
+  // input row / columns
+  inputRow: {
     flexDirection: "row",
     gap: spacing.sm,
     marginBottom: spacing.sm,
   },
-  col: { flex: 1 },
-  inlineRow: { flexDirection: "row", gap: spacing.xs },
-  flex1: { flex: 1 },
-
-  // Inputs
-  inputGroup: { marginBottom: spacing.xs },
+  phoneInputRow: {},
+  inputCol: { flex: 1 },
+  input: {
+    backgroundColor: Colors.primary,
+    padding: spacing.sm,
+    color: Colors.white,
+    fontSize: responsiveFontSize(11),
+    height: responsiveHeight(0.055),
+  },
   label: {
     color: Colors.primary,
     fontSize: responsiveFontSize(8),
     fontWeight: "900",
     marginBottom: spacing.xs,
   },
-  dropdown: {
-    height: responsiveHeight(0.04),
-    borderColor: Colors.grey,
-    borderWidth: 0.2,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: Colors.primary,
-  },
-  dropdownText: {
-    color: Colors.white,
-    fontSize: responsiveFontSize(8),
-    fontWeight: "500",
-  },
 
-  // Date/Time Buttons
-  dateTimeButton: {
+  // date row
+  dateRow: {
     backgroundColor: Colors.primary,
     padding: spacing.sm,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-    height: responsiveHeight(0.04),
+    justifyContent: "space-between",
   },
-  dateTimeIcon: { fontSize: responsiveFontSize(8) },
-  dateTimeText: {
+  dateText: {
     color: Colors.cream,
+    fontSize: responsiveFontSize(9),
+    fontWeight: "700",
+  },
+  badge: {
+    backgroundColor: "#ffedd5",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  badgeText: {
+    color: "#b45309",
     fontSize: responsiveFontSize(8),
-    fontWeight: "600",
+    fontWeight: "700",
   },
 
-  // Text Area (full width row)
+  smallBadge: {
+    backgroundColor: "#fde1d8",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  smallBadgeText: {
+    color: "#b45309",
+    fontSize: responsiveFontSize(8),
+    fontWeight: "700",
+  },
+
+  // slots
+  slotList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  slotItem: {
+    width: responsiveWidth(0.19), // changed from 0.28 -> fits 4 items per row
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#f3c6b7",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    marginBottom: spacing.sm,
+    backgroundColor: Colors.white,
+    alignItems: "center",
+  },
+  slotItemSelected: {
+    backgroundColor: Colors.secondary,
+    borderColor: Colors.secondary,
+  },
+  slotTimeText: {
+    color: Colors.primary,
+    fontSize: responsiveFontSize(9),
+    fontWeight: "800",
+    marginBottom: spacing.xs,
+  },
+  slotSeatsText: {
+    color: "#6b7280",
+    fontSize: responsiveFontSize(8),
+  },
+
+  // text area
   textArea: {
     backgroundColor: Colors.primary,
     padding: spacing.sm,
@@ -450,6 +545,7 @@ const styles = StyleSheet.create({
     fontSize: responsiveFontSize(11),
     textAlignVertical: "top",
     minHeight: responsiveHeight(0.1),
+    marginTop: spacing.xs,
   },
 
   // Buttons
@@ -463,6 +559,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.secondary,
     alignItems: "center",
     justifyContent: "center",
+    padding: spacing.sm,
   },
   confirmButtonText: {
     color: Colors.white,
@@ -519,7 +616,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
 
-  // Modal Styles
+  // Modal Styles (re-used)
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",

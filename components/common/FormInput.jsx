@@ -17,11 +17,12 @@ export default function FormInput({
   multiline = false,
   numberOfLines = 1,
   width = "100%",
+  bgColor = Colors.primary,
 }) {
   return (
     <View style={styles.wrapper}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
-      <View style={styles.inputRow}>
+      <View style={[styles.inputRow, { backgroundColor: bgColor }]}>
         {prefix ? <View style={styles.prefix}>{prefix}</View> : null}
         <TextInput
           value={value}
@@ -53,10 +54,11 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.primary,
     borderRadius: 3,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 5,
+    borderWidth: 1,
+    borderColor: "#eadfd6",
   },
   prefix: {
     backgroundColor: Colors.dark?.background || "#fff",
@@ -70,6 +72,7 @@ const styles = StyleSheet.create({
     color: Colors.placeHolderGrey,
     fontSize: responsiveFontSize(13),
     padding: 0,
+    
   },
   multiline: {
     minHeight: responsiveHeight(0.08),

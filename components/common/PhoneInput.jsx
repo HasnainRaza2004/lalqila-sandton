@@ -5,8 +5,7 @@ import { Colors } from "../../constants/theme";
 import {
   responsiveFontSize,
   responsiveHeight,
-  responsiveWidth,
-  spacing,
+  spacing
 } from "../../utils/responsive";
 import FormInput from "./FormInput";
 
@@ -15,7 +14,9 @@ export default function PhoneInput({
   prefix = "+27",
   value,
   onChangeText,
-  onChangePrefix, // optional callback when country code changes
+  onChangePrefix,
+  width,
+  bgColor = Colors.primary
 }) {
   const [country, setCountry] = useState({ cca2: "ZA", callingCode: ["27"] });
   const [localPrefix, setLocalPrefix] = useState(prefix);
@@ -43,7 +44,7 @@ export default function PhoneInput({
     <View style={styles.wrapper}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
       <View style={styles.row}>
-        <View style={styles.codeBox}>
+        <View style={[styles.codeBox, { backgroundColor: bgColor || Colors.primary }]}>
           {/* CountryPicker renders a pressable flag + name; withCallingCode shows code in picker */}
           <CountryPicker
             withFilter
@@ -62,7 +63,8 @@ export default function PhoneInput({
           onChangeText={onChangeText}
           placeholder="Phone Number"
           keyboardType="phone-pad"
-          width={responsiveWidth(0.53)}
+          width={width}
+          bgColor={bgColor}
         />
       </View>
     </View>
@@ -73,7 +75,6 @@ const styles = StyleSheet.create({
   wrapper: {},
   row: { flexDirection: "row" },
   codeBox: {
-    backgroundColor: Colors.primary,
     paddingHorizontal: spacing.md,
     height: responsiveHeight(0.055),
     justifyContent: "center",
@@ -81,11 +82,15 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
     flexDirection: "row",
     alignItems: "center",
+    
+    borderWidth: 1,
+    borderColor: "#eadfd6",
   },
   codeText: {
     color: Colors.placeHolderGrey,
     fontSize: responsiveFontSize(13),
     paddingLeft: 8,
+    
   },
   label: {
     color: Colors.primary,

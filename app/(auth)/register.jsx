@@ -13,8 +13,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import CountryPicker from "react-native-country-picker-modal";
 import { SafeAreaView } from "react-native-safe-area-context";
+import PhoneInput from "../../components/common/PhoneInput";
 import { Colors } from "../../constants/theme";
 import {
   responsiveFontSize,
@@ -22,7 +22,6 @@ import {
   responsiveWidth,
   spacing,
 } from "../../utils/responsive";
-import PhoneInput from "../../components/common/PhoneInput";
 
 const logo = require("../../assets/images/logo.png");
 
@@ -85,7 +84,8 @@ export default function Register() {
               returnKeyType="next"
               onSubmitEditing={() => phoneRef.current?.focus()}
             />
-            <PhoneInput />
+            <Text style={styles.label}>Phone</Text>
+            <PhoneInput width={responsiveWidth(0.40)} bgColor={Colors.white} />
 
             {/* <Text style={styles.label}>Phone</Text>
             <View style={styles.phoneRow}>
