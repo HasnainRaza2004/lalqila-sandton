@@ -1,18 +1,18 @@
 import { useState } from "react";
 import {
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { Colors } from "../../constants/theme";
 import {
-  responsiveFontSize,
-  responsiveHeight,
-  responsiveWidth,
-  spacing,
+    responsiveFontSize,
+    responsiveHeight,
+    responsiveWidth,
+    spacing,
 } from "../../utils/responsive";
 
 export default function SelectDropdown({
@@ -21,14 +21,18 @@ export default function SelectDropdown({
   onSelect,
   options = [],
   placeholder = "Select",
+  compact = false,
 }) {
   const [visible, setVisible] = useState(false);
 
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, compact && styles.wrapperCompact]}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
-      <TouchableOpacity style={styles.trigger} onPress={() => setVisible(true)}>
-        <Text style={styles.triggerText}>{value ?? placeholder}</Text>
+      <TouchableOpacity
+        style={[styles.trigger, compact && styles.triggerCompact]}
+        onPress={() => setVisible(true)}
+      >
+        <Text style={[styles.triggerText, compact && styles.triggerTextCompact]}>{value ?? placeholder}</Text>
       </TouchableOpacity>
 
       <Modal
@@ -69,6 +73,7 @@ export default function SelectDropdown({
 
 const styles = StyleSheet.create({
   wrapper: { marginBottom: spacing.sm },
+  wrapperCompact: { marginBottom: spacing.xs },
   label: {
     color: Colors.primary,
     fontSize: responsiveFontSize(10),
@@ -81,7 +86,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm + 5,
     borderRadius: 3,
   },
+  triggerCompact: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: 3,
+  },
   triggerText: { color: Colors.placeHolderGrey, fontSize: responsiveFontSize(13) },
+  triggerTextCompact: { fontSize: responsiveFontSize(10.5) },
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.45)",

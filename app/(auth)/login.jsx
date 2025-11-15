@@ -2,24 +2,24 @@ import { useRouter } from "expo-router";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useRef, useState } from "react";
 import {
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../constants/theme";
 import {
-  responsiveFontSize,
-  responsiveHeight,
-  responsiveWidth,
-  spacing,
+    responsiveFontSize,
+    responsiveHeight,
+    responsiveWidth,
+    spacing,
 } from "../../utils/responsive";
 
 export default function Login() {
@@ -75,7 +75,7 @@ export default function Login() {
               <Text style={styles.linkText}>Forgot Password?</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.primaryBtn} onPress={() => router.push("/(user)/dashboard")}>
+            <TouchableOpacity style={styles.primaryBtn} onPress={() => router.push("/(user)/restaurants")}>
               <Text style={styles.primaryBtnText}>Sign In</Text>
             </TouchableOpacity>
 

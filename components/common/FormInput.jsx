@@ -1,9 +1,9 @@
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { Colors } from "../../constants/theme";
 import {
-  responsiveFontSize,
-  responsiveHeight,
-  spacing,
+    responsiveFontSize,
+    responsiveHeight,
+    spacing,
 } from "../../utils/responsive";
 
 export default function FormInput({
@@ -18,11 +18,16 @@ export default function FormInput({
   numberOfLines = 1,
   width = "100%",
   bgColor = Colors.primary,
+  compact = false,
 }) {
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, compact && styles.wrapperCompact]}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
-      <View style={[styles.inputRow, { backgroundColor: bgColor }]}>
+      <View style={[
+        styles.inputRow,
+        { backgroundColor: bgColor },
+        compact && styles.inputRowCompact,
+      ]}>
         {prefix ? <View style={styles.prefix}>{prefix}</View> : null}
         <TextInput
           value={value}
@@ -30,7 +35,12 @@ export default function FormInput({
           placeholder={placeholder}
           placeholderTextColor={Colors.placeHolderGrey}
           placeHolderFontSize={responsiveFontSize(11)}
-          style={[styles.input, multiline && styles.multiline, { width }]}
+          style={[
+            styles.input,
+            multiline && styles.multiline,
+            { width },
+            compact && styles.inputCompact,
+          ]}
           keyboardType={keyboardType}
           secureTextEntry={secureTextEntry}
           multiline={multiline}
@@ -44,6 +54,9 @@ export default function FormInput({
 const styles = StyleSheet.create({
   wrapper: {
     marginBottom: spacing.sm,
+  },
+  wrapperCompact: {
+    marginBottom: spacing.xs,
   },
   label: {
     color: Colors.primary,
@@ -60,6 +73,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#eadfd6",
   },
+  inputRowCompact: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: 3,
+  },
   prefix: {
     backgroundColor: Colors.dark?.background || "#fff",
     paddingHorizontal: spacing.sm,
@@ -73,6 +91,9 @@ const styles = StyleSheet.create({
     fontSize: responsiveFontSize(13),
     padding: 0,
     
+  },
+  inputCompact: {
+    fontSize: responsiveFontSize(10.5),
   },
   multiline: {
     minHeight: responsiveHeight(0.08),
