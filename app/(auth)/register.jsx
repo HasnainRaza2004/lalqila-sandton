@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import PhoneInput from "../../components/common/PhoneInput";
 import { Colors } from "../../constants/theme";
+import { useRegister } from "../../hooks/api/useAuth";
 import {
   responsiveFontSize,
   responsiveHeight,
@@ -40,6 +41,31 @@ export default function Register() {
   const confirmRef = useRef(null);
   const [country, setCountry] = useState({});
   const [phonePrefix, setPhonePrefix] = useState("+27"); // default to South Africa
+  const { mutate: register, isPending, error: apiError } = useRegister();
+
+
+  const signUp = (() => {
+    //     {
+    //   "id": 0,
+    //   "userName": "string",
+    //   "password": "string",
+    //   "date": "2025-11-22T20:11:39.520Z",
+    //   "status": true
+    // }
+    register({ id: 0, userName: "Hasnain Raza", password, date: new Date() },
+      {
+        onSuccess: (data) => {
+          // Navigation is handled by the useLogin hook
+        },
+        onError: (error) => {
+          Alert.alert(
+            'Registeration Failed',
+            error.response?.data?.message || 'Invalid email or password. Please try again.'
+          );
+        },
+      })
+    // router.push("/(admin)/dashboard")
+  })
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -172,7 +198,7 @@ export default function Register() {
 
             <TouchableOpacity
               style={styles.primaryBtn}
-              onPress={() => router.push("/(admin)/dashboard")}
+              onPress={signUp}
             >
               <Text style={styles.primaryBtnText}>Sign Up</Text>
             </TouchableOpacity>
