@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
 // Replace this with your actual API base URL
-export const API_BASE_URL = 'https://localhost:7060/api/';
+export const API_BASE_URL = 'https://api-erms.xqura.com/';
 
 // Create axios instance
 const apiClient = axios.create({
